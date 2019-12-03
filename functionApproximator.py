@@ -2,6 +2,7 @@ import random
 random.seed(1) # Get consistent hashing for tile coding
 from tiles3 import tiles, IHT
 import numpy as np
+from utility import findProperNumberOfTilings
 import torch
 import torch.nn as nn
 import torch.nn.functional as F 
@@ -9,13 +10,16 @@ import torch.optim as optim
 
 ''' A linear function approximator using tile coding '''
 class LinearApproximatorOfActionValuesWithTile():
-	def __init__(self):
-		self.stateLow = np.array([0., 0., -10., -25.])
-		self.stateHigh = np.array([1000, 500, 100, 25])
-		self.numTilings = 16
-		self.numActions = 21
+	def __init__(self, alpha, stateLow, stateHigh, numActions):
+		assert(len(stateLow) == len(stateHigh))
 
-		self.tileWidth = np.array([50, 100, 16, 16]) # tileWidth / numTilings = ultimate resolution
+		self.alpha = alpha
+		self.stateLow = stateLow
+		self.stateHigh = stateHigh
+		self.numActions = numActions
+
+		self.numTilings = findProperNumberOfTilings(len(stateLow)) # 16
+		self.tileWidth = np.array([3, 3, 1, 1]) * self.numTilings # tileWidth = ultimate resolution * numTilings
 		# Used to re-scale the range of each dimension in state to use Sutton's 
 		# tile coding software interface.
 		self.scalingFactor = 1 / self.tileWidth
@@ -38,30 +42,28 @@ class LinearApproximatorOfActionValuesWithTile():
 		Wrapper method to produce binary feature of state-action pair (s, a). It
 		returns a list of self.numTilings numbers that denote the indices of active tile.
 		'''
-		assert(len(s) == 4)
+		assert(len(s) == len(self.stateLow) and 0 <= a < self.numActions)
 
 		return tiles(self.iht, self.numTilings, list(self.scalingFactor * s), ints=[a])
 
-	def __call__(self, s, a):
-		activeIndices = self.mytiles(s, a)
-		return np.sum(self.w[activeIndices])
-
-	def __getitem__(self, s):
+	def __call__(self, s, a=None):
 		'''
-		Overload the indexing operator [] so that users of this class
-		can use something like Q[state] to get a list of estimated
-		state-action values.
+		Compute estimated Q(s) (which returns an ndarray of Q(s,a)'s) or Q(s, a).
 		'''
-		result = np.zeros(self.numActions)
-		for a in range(self.numActions):
-			result[a] = self.__call__(s, a)
-		return result
+		if a == None:
+			result = np.zeros(self.numActions)
+			for a in range(self.numActions):
+				result[a] = self.__call__(s, a)
+			return result
+		else:
+			activeIndices = self.mytiles(s, a)
+			return np.sum(self.w[activeIndices])
 
-	def update(self, alpha, G, s, a):
+	def update(self, s, a, G):
 		activeIndices = self.mytiles(s, a)
 		estimatedStateActionValue = self.__call__(s, a)
 
-		self.w[activeIndices] += alpha * (G - estimatedStateActionValue)
+		self.w[activeIndices] += self.alpha * (G - estimatedStateActionValue)
 
 
 ''' A non-linear function approximator using neural networks with Pytorch '''
@@ -70,12 +72,12 @@ class NonLinearApproximatorOfStateValuesWithNN():
 	# Input layer receives (raw) state representation of s
 	# and output estimated state value of s.
 	class ValueNet(nn.Module):
-		def __init__(self, stateDims):
+		def __init__(self, stateDimension):
 			super(ValueNet, self).__init__()
-			self._stateDims = stateDims
+			self._stateDims = stateDimension
 
 			# Three affine operations and one softmax operation
-			self.fc1 = nn.Linear(stateDims, 32)
+			self.fc1 = nn.Linear(stateDimension, 32)
 			self.fc2 = nn.Linear(32, 32)
 			self.fc3 = nn.Linear(32, 1)
 
@@ -88,15 +90,13 @@ class NonLinearApproximatorOfStateValuesWithNN():
 
 			return x
 
-	def __init__(self, state_dims, alpha):
-		"""
-		state_dims: the number of dimensions of state space
-		alpha: learning rate
-		"""
-		self.valueNet = self.ValueNet(state_dims)
+	def __init__(self, alpha, stateLow, stateHigh):
+		assert(len(stateLow) == len(stateHigh))
+
+		self.valueNet = self.ValueNet(len(stateLow))
 		self.valueNetOptimizer = optim.Adam(self.valueNet.parameters(), lr=alpha)
 
-	def __call__(self,s) -> float:
+	def __call__(self, s) -> float:
 		# Convert input state s (a numpy array) to a torch tensor
 		s = torch.tensor(s, dtype=torch.float32)
 		# Add a fake additional dimension for the #_samples dimension.
@@ -104,7 +104,7 @@ class NonLinearApproximatorOfStateValuesWithNN():
 
 		return self.valueNet.forward(s).item()
 
-	def update(self,s,G):
+	def update(self, s, G):
 		self.valueNetOptimizer.zero_grad()
 		
 		# forward pass to compute estimated state value of s

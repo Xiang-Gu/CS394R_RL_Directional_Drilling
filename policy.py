@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F 
 import torch.optim as optim
 
+''' Non parametric random policy. '''
 class RandomPolicy():
     def __init__(self, numActions):
         self.numActions = numActions
@@ -14,7 +15,7 @@ class RandomPolicy():
     def action(self, state):
         return np.random.choice(self.numActions)
 
-
+''' Non parametric epsilon greedy policy. '''
 class EpsilonGreedy():
     def __init__(self, Q, epsilon):
         self.Q = Q
@@ -23,7 +24,7 @@ class EpsilonGreedy():
 
     def action_prob(self, state, action):
         # an ndarray of Q(state, action) for all actions.
-        actionValues = self.Q[state] 
+        actionValues = self.Q(state)
         if actionValues[action] == np.max(actionValues): # prob. of choosing greedy action
             return 1. - self.epsilon + self.epsilon / self.numActions
         else: # prob. of choosing any other action
@@ -35,11 +36,9 @@ class EpsilonGreedy():
             return np.random.choice(self.numActions)
         else:
             # greedy action (break ties randomly)
-            actionValues = self.Q[state]
+            actionValues = self.Q(state)
             maxActionValue = np.max(actionValues)
             return np.random.choice([a for a in range(self.numActions) if actionValues[a] == maxActionValue])
-
-
 
 ''' Parameterized policy with neural network. '''
 class PiApproximationWithNN():
