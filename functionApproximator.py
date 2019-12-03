@@ -1,24 +1,24 @@
 import random
 random.seed(1) # Get consistent hashing for tile coding
-from tiles3 import tiles
+from tiles3 import tiles, IHT
 import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F 
+import torch.optim as optim
 
 ''' A linear function approximator using tile coding '''
-class ValueFunctionWithLinearApproximationUsingTiles():
+class LinearApproximatorOfActionValuesWithTile():
 	def __init__(self):
 		self.stateLow = np.array([0., 0., -10., -25.])
 		self.stateHigh = np.array([1000, 500, 100, 25])
 		self.numTilings = 16
 		self.numActions = 21
 
-		# resolution means the fine-ness we want in each dimension. E.g., 3
-		# in the first dimension means we want two x-coordinates x_a and x_b 
-		# such that |x_a - x_b| > 3 (feet) to have different features (and thus 
-		# different estimated values).
-		resolution = np.array([3, 3, 1, 1])
+		self.tileWidth = np.array([50, 100, 16, 16]) # tileWidth / numTilings = ultimate resolution
 		# Used to re-scale the range of each dimension in state to use Sutton's 
 		# tile coding software interface.
-		self.scalingFactor = 1 / (self.numTilings * resolution)
+		self.scalingFactor = 1 / self.tileWidth
 
 		# One advantage of Sutton's tilecoder is the use of hashing. In our problem,
 		# the state range is too large so that the size of the resulting weight vector
@@ -29,8 +29,9 @@ class ValueFunctionWithLinearApproximationUsingTiles():
 		# This way, we implicitly achieve the desired property of "dynamic tile coding" where
 		# the total number of tiles stays unchanged but give more resolution to state spaces
 		# that are visited more often.
-		self.maxSize = 100000000
-		self.w = np.zeros(self.maxSize)
+		maxSize = np.prod(np.ceil((self.stateHigh - self.stateLow) / self.tileWidth), dtype=int) * self.numTilings * self.numActions
+		self.iht = IHT(maxSize)
+		self.w = np.zeros(maxSize)
 
 	def mytiles(self, s, a):
 		'''
@@ -39,7 +40,7 @@ class ValueFunctionWithLinearApproximationUsingTiles():
 		'''
 		assert(len(s) == 4)
 
-		return tiles(self.maxSize, self.numTilings, list(self.scalingFactor * s), ints=[a])
+		return tiles(self.iht, self.numTilings, list(self.scalingFactor * s), ints=[a])
 
 	def __call__(self, s, a):
 		activeIndices = self.mytiles(s, a)
@@ -64,6 +65,64 @@ class ValueFunctionWithLinearApproximationUsingTiles():
 
 
 ''' A non-linear function approximator using neural networks with Pytorch '''
+class NonLinearApproximatorOfStateValuesWithNN():
+	# A Nested class that specifies the structure of the network.
+	# Input layer receives (raw) state representation of s
+	# and output estimated state value of s.
+	class ValueNet(nn.Module):
+		def __init__(self, stateDims):
+			super(ValueNet, self).__init__()
+			self._stateDims = stateDims
+
+			# Three affine operations and one softmax operation
+			self.fc1 = nn.Linear(stateDims, 32)
+			self.fc2 = nn.Linear(32, 32)
+			self.fc3 = nn.Linear(32, 1)
+
+		def forward(self, x):
+			assert len(x) == self._stateDims
+
+			x = F.relu(self.fc1(x))
+			x = F.relu(self.fc2(x))
+			x = self.fc3(x)
+
+			return x
+
+	def __init__(self, state_dims, alpha):
+		"""
+		state_dims: the number of dimensions of state space
+		alpha: learning rate
+		"""
+		self.valueNet = self.ValueNet(state_dims)
+		self.valueNetOptimizer = optim.Adam(self.valueNet.parameters(), lr=alpha)
+
+	def __call__(self,s) -> float:
+		# Convert input state s (a numpy array) to a torch tensor
+		s = torch.tensor(s, dtype=torch.float32)
+		# Add a fake additional dimension for the #_samples dimension.
+		s.unsqueeze(0)
+
+		return self.valueNet.forward(s).item()
+
+	def update(self,s,G):
+		self.valueNetOptimizer.zero_grad()
+		
+		# forward pass to compute estimated state value of s
+		s = torch.tensor(s, dtype=torch.float32)
+		s.unsqueeze(0)
+		estimatedStateValue = self.valueNet.forward(s)
+
+		# define loss whose gradient is -(semi_grad) so that 
+		# w = w - alpha * (-(semi_grad)) = w + alpha * semi_grad
+		criterion = nn.MSELoss()
+		G = torch.tensor([G], dtype=torch.float32)
+		G.unsqueeze(0)
+		loss = 0.5 * criterion(estimatedStateValue, G)
+
+		# update parameter
+		loss.backward()
+		self.valueNetOptimizer.step()
+
 
 
 

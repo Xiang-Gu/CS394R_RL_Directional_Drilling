@@ -14,7 +14,7 @@ class AutoDrill():
 
         self.stateDimension = 4
         self.numActions = 21
-        self.gamma = 0.99
+        self.gamma = 1.
         
     def reset(self):
         global simstates
