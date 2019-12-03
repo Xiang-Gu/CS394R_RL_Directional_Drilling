@@ -1,33 +1,21 @@
 import numpy as np
 from matplotlib import pyplot as plt
-# Simulator for the directional drilling process
+'''
+Simulator for the directional drilling process
+'''
 
 class AutoDrill():     
 
     simstates = np.zeros((1,4)) #Continuous state variables
 
     def __init__(self):
-        # 100*90*50 states: Position grid of 100 blocks ; angles -180 to 180 at 4deg precision ; build rate -25 to 25 at 1deg/ft precision
-        # 21 actions: -1 to 1 duty cycle in .1 resolution (Where duty cycle is the force of input)
-        # self.sD = [1000,500,180,50] #Dimensions of state space
-        # self.tile_width = np.array((50,5,5,10))
-        self.X = 1000 #Size in feet of position grid x perimeter
-        self.Y = 500 #Size in feet of position grid y perimeter
-        # nS=np.product(self.sD)
-        # env_spec = EnvSpec(nS, 21, 1.) #nS,nA,gamma
-        # super().__init__(env_spec)
+        self.X = 1000 # Size in feet of position grid x perimeter
+        self.Y = 500 # Size in feet of position grid y perimeter
 
         self.stateDimension = 4
         self.numActions = 21
         self.gamma = 0.99
         
-    # def awhere(self,ndloc,ndsize):
-    #     pos = 0
-    #     for p in range(ndloc.shape[0]-1):
-    #         pos += ndloc[p]*np.product(ndsize[p+1:])
-    #     pos += ndloc[-1]
-    #     return pos
-    
     def reset(self):
         global simstates
         
@@ -54,7 +42,6 @@ class AutoDrill():
 
     def step(self, action):
         global simstates
-        # assert action in range(self.spec.nA), "Invalid Action"
         
         #Model Parameters
         dist=0
@@ -78,8 +65,6 @@ class AutoDrill():
         theta = (alpha-thetadoto)*tau*exp1 + (epso-tau)*alpha + thetao + tau*thetadoto;
         thetadot = alpha*(-exp1+1)+thetadoto*exp1;
         
-#        plt.plot(epso,theta)
-        
         #Calculate x and y
         x = xo + deltad*np.cumsum(np.cos(np.deg2rad(theta)))
         y = yo + deltad*np.cumsum(np.sin(np.deg2rad(theta)))
@@ -93,10 +78,7 @@ class AutoDrill():
             termination = True
         else:
             termination = False
-        
-        #Scale states for tile coding - divide states by tile width
-        # TODO:implement scaling outside of environment class   
-        # self.state=self.state/self.tile_width
+
         
         if termination is True:
             #For positive rewards try:

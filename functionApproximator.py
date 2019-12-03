@@ -1,58 +1,23 @@
 import random
-random.seed(0) # Get consistent hashing for tile coding
-from tiles3 import tiles, IHT
+random.seed(1) # Get consistent hashing for tile coding
+from tiles3 import tiles
 import numpy as np
 
-''' Base class for function approximator'''
-class ValueFunctionWithApproximation(object):
-	def __call__(self,s) -> float:
-		"""
-		return the value of given state; \hat{v}(s)
-
-		input:
-			state
-		output:
-			value of the given state
-		"""
-		#No need to implement here- they are implemented in the child class that inherets this
-		raise NotImplementedError()
-
-	def update(self,alpha,G,s_tau):
-		"""
-		Implement the update rule;
-		w <- w + \alpha[G- \hat{v}(s_tau;w)] \nabla\hat{v}(s_tau;w)
-
-		input:
-			alpha: learning rate
-			G: TD-target. It can be formed by any valid target like TD_target or Monte-Carlo target.
-			s_tau: target state for updating (yet, update will affect the other states)
-		ouptut:
-			None
-		"""
-		#No need to implement here- This is a base class inhereted by other classes
-		raise NotImplementedError()
-
 ''' A linear function approximator using tile coding '''
-class ValueFunctionWithLinearApproximationUsingTiles(ValueFunctionWithApproximation):
+class ValueFunctionWithLinearApproximationUsingTiles():
 	def __init__(self):
-		"""
-		state_low: possible minimum value for each dimension in state
-		state_high: possible maimum value for each dimension in state
-		num_actions: the number of possible actions
-		num_tilings: # tilings
-		tile_width: tile width for each dimension
-		"""
 		self.stateLow = np.array([0., 0., -10., -25.])
 		self.stateHigh = np.array([1000, 500, 100, 25])
 		self.numTilings = 16
 		self.numActions = 21
+
 		# resolution means the fine-ness we want in each dimension. E.g., 3
-		# in the first dimension means we want two x-coordinates x_a and x_b that is
+		# in the first dimension means we want two x-coordinates x_a and x_b 
 		# such that |x_a - x_b| > 3 (feet) to have different features (and thus 
 		# different estimated values).
 		resolution = np.array([3, 3, 1, 1])
 		# Used to re-scale the range of each dimension in state to use Sutton's 
-		# tile coding interface.
+		# tile coding software interface.
 		self.scalingFactor = 1 / (self.numTilings * resolution)
 
 		# One advantage of Sutton's tilecoder is the use of hashing. In our problem,
