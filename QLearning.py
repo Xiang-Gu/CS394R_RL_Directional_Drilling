@@ -36,4 +36,4 @@ def QLearningAlgorithm():
         print(str(episode) + "th episode: reward = " + str(reward))
 
         if episode % 1000 == 0:
-            evaluation(env, greedyPolicy, Q, str(episode))
+            evaluation(env, greedyPolicy, str(episode))

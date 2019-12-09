@@ -1,12 +1,35 @@
-def evaluation(env, evalPolicy, Q, episodeNum):
+import numpy as np
+
+def evaluation(env, evalPolicy, episodeNum):
     s = env.reset()
     done = False
     while not done:
-        a = evalPolicy.action(s) # Online policy (epsilon-greedy)
-        next_s, r, done = env.step(a)
+        a = evalPolicy.action(s)
+        next_s, r, done, info = env.step(a)
         if done is True:
-            env.disp_traj("episode " + str(episodeNum) + " reward = " + str(round(r,2)), save_flag=1, show_flag=0)
+        	env.render(mode='human', close=False, show=False, save=True, r_info = True)
         s = next_s
+
+def computeMaxEpRetFromRewards(rewards, episodeLengths, epochSteps, gamma):
+	assert len(rewards) == len(epochSteps)
+	assert len(rewards) == np.sum(episodeLengths)
+
+	result = -999999
+
+	# idx should point to the start of each episode
+	idx = 0
+	for length in episodeLengths:
+		# Compute episode return for current episode (an episode of length length).
+		episodeRet = 0.
+		for jdx in range(idx, idx + length):
+			episodeRet += gamma**(jdx-idx) * rewards[jdx]
+		
+		result = max(result, episodeRet)
+		idx += length
+
+	return result
+
+
 
 '''
 Heuristic says, for best performance of tiling coding,

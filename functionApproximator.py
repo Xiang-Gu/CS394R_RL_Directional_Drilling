@@ -1,5 +1,4 @@
 import random
-random.seed(1) # Get consistent hashing for tile coding
 from tiles3 import tiles, IHT
 import numpy as np
 from utility import findProperNumberOfTilings
@@ -67,33 +66,37 @@ class LinearApproximatorOfActionValuesWithTile():
 
 
 ''' A non-linear function approximator using neural networks with Pytorch '''
+
+'''
+A class that specifies the structure of the network which
+is later used to approximate approximate state values.
+Input layer receives (raw) state representation of s
+and output estimated state value of s.
+'''
+class ValueNet(nn.Module):
+	def __init__(self, stateDimension):
+		super(ValueNet, self).__init__()
+		self._stateDims = stateDimension
+
+		# Three affine operations and one softmax operation
+		self.fc1 = nn.Linear(stateDimension, 32)
+		self.fc2 = nn.Linear(32, 32)
+		self.fc3 = nn.Linear(32, 1)
+
+	def forward(self, x):
+		assert len(x) == self._stateDims
+
+		x = F.relu(self.fc1(x))
+		x = F.relu(self.fc2(x))
+		x = self.fc3(x)
+
+		return x
+
 class NonLinearApproximatorOfStateValuesWithNN():
-	# A Nested class that specifies the structure of the network.
-	# Input layer receives (raw) state representation of s
-	# and output estimated state value of s.
-	class ValueNet(nn.Module):
-		def __init__(self, stateDimension):
-			super(ValueNet, self).__init__()
-			self._stateDims = stateDimension
-
-			# Three affine operations and one softmax operation
-			self.fc1 = nn.Linear(stateDimension, 32)
-			self.fc2 = nn.Linear(32, 32)
-			self.fc3 = nn.Linear(32, 1)
-
-		def forward(self, x):
-			assert len(x) == self._stateDims
-
-			x = F.relu(self.fc1(x))
-			x = F.relu(self.fc2(x))
-			x = self.fc3(x)
-
-			return x
-
 	def __init__(self, alpha, stateLow, stateHigh):
 		assert(len(stateLow) == len(stateHigh))
 
-		self.valueNet = self.ValueNet(len(stateLow))
+		self.valueNet = ValueNet(len(stateLow))
 		self.valueNetOptimizer = optim.Adam(self.valueNet.parameters(), lr=alpha)
 
 	def __call__(self, s) -> float:

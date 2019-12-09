@@ -1,0 +1,42 @@
+{
+    "ac_kwargs":	{
+        "hidden_sizes":	[
+            32
+        ]
+    },
+    "actor_critic":	"mlp_actor_critic",
+    "algo":	"trpo",
+    "backtrack_coeff":	0.8,
+    "backtrack_iters":	10,
+    "cg_iters":	10,
+    "damping_coeff":	0.1,
+    "delta":	0.01,
+    "env_fn":	"env_fn",
+    "epochs":	500,
+    "gamma":	1.0,
+    "lam":	0.97,
+    "logger":	{
+        "<spinup.utils.logx.EpochLogger object at 0x7f1ab3b5d940>":	{
+            "epoch_dict":	{},
+            "exp_name":	null,
+            "first_row":	true,
+            "log_current_row":	{},
+            "log_headers":	[],
+            "output_dir":	"/home/xiang/Desktop/School/UT_grad_school/First_Year/CS394R_RL/myProject/trpo_smallVaringGoal_repre0_model_output_seed4",
+            "output_file":	{
+                "<_io.TextIOWrapper name='/home/xiang/Desktop/School/UT_grad_school/First_Year/CS394R_RL/myProject/trpo_smallVaringGoal_repre0_model_output_seed4/progress.txt' mode='w' encoding='UTF-8'>":	{
+                    "mode":	"w"
+                }
+            }
+        }
+    },
+    "logger_kwargs":	{
+        "output_dir":	"/home/xiang/Desktop/School/UT_grad_school/First_Year/CS394R_RL/myProject/trpo_smallVaringGoal_repre0_model_output_seed4"
+    },
+    "max_ep_len":	1000,
+    "save_freq":	10,
+    "seed":	4,
+    "steps_per_epoch":	600,
+    "train_v_iters":	80,
+    "vf_lr":	0.001
+}
