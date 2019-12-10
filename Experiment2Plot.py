@@ -7,7 +7,7 @@ random_starting_state_data = np.load("Experiment2Data/trpo_trained_on_randomStar
 stochastic_environment_data = np.load("Experiment2Data/trpo_trained_on_stochasticEnv.npy")
 
 # Prepare plotting apparatus
-x = ["", "Average Parameter", "Noisy Next State", "Random Starting State", "Stochastic Environment (Unreal)"]
+x = ["", "Average Parameter", "Noisy Next State", "Random Starting State", "Stochastic Environment\n(Unreal)"]
 x_pos = [i for i in range(5)]
 y = [np.mean(average_parameter_data), np.mean(noisy_next_state_data), np.mean(random_starting_state_data), np.mean(stochastic_environment_data)]
 yerr = [np.std(average_parameter_data), np.std(noisy_next_state_data), np.std(random_starting_state_data), np.std(stochastic_environment_data)]
@@ -32,8 +32,9 @@ for flier in bp['fliers']:
     flier.set(marker='o', color='#e7298a', alpha=0.5,linewidth=3)
 plt.grid()
 
-plt.xlabel("Trained on Different Environment", size=20)
-plt.ylabel("Return / Episode", size=20)
-plt.title("Robustness Test of Policy Trained on Various Environments", size=30)
-plt.xticks(x_pos, x)
+plt.xlabel("Trained on Different Environments", size=30)
+plt.ylabel("Episode Return", size=30)
+plt.title("Robustness Test of Policy Trained on Various Environments", size=35)
+plt.xticks(x_pos, x, fontsize=18)
+plt.yticks(fontsize=15)
 plt.show()

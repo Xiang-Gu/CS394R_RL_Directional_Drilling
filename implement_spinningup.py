@@ -13,8 +13,8 @@ def run_algo(output_dir, seed):
 	
 	#Needed to use custom environment
 	def env_fn():
-		import env.smallVaringGoalRep0Environment
-		return gym.make('SmallVaringGoalRep0Env-v0')
+		import env.smallVaringGoalRep1Environment
+		return gym.make('SmallVaringGoalRep1Env-v0')
 	
 	sess = tf.Session()
 	sess.run(tf.global_variables_initializer())
@@ -24,16 +24,16 @@ def run_algo(output_dir, seed):
 	ac_kwargs = dict(hidden_sizes=(32,))
 	with tf.Session(graph=tf.Graph()):
 		#ppo or trpo or vpg
-		trpo(env_fn,gamma=1., steps_per_epoch=600, epochs=500, seed=seed, ac_kwargs=ac_kwargs, logger_kwargs = logger_kwargs)
+		trpo(env_fn,gamma=1., steps_per_epoch=1200, epochs=5000, seed=seed, ac_kwargs=ac_kwargs, logger_kwargs = logger_kwargs)
 	return
 
 """Run"""
 #   Run algorithm
 Rs = []
-for seed in range(5):
+for seed in range(1):
 	print("running trpo with seed " + str(seed))
 	np.random.seed(seed)
-	output_dir = '/home/xiang/Desktop/School/UT_grad_school/First_Year/CS394R_RL/myProject/trpo_smallVaringGoal_repre0_model_output_seed'+ str(seed) 
+	output_dir = '/home/xiang/Desktop/School/UT_grad_school/First_Year/CS394R_RL/myProject/trpo_smallVaringGoal_repre1_model_output_seed'+ str(seed) 
 	run_algo(output_dir, seed)
 
 
@@ -49,8 +49,8 @@ for seed in range(5):
 
 	print("Deploying learned policy to large varing goal environment to test the effectiveness of the representation\n.")
 	 
-	import env.largeVaringGoalRep0Environment 
-	env = gym.make('LargeVaringGoalRep0Env-v0')
+	import env.largeVaringGoalRep1Environment 
+	env = gym.make('LargeVaringGoalRep1Env-v0')
 
 	# Test the learned policy over 1000 episode on stochastic environment.
 	for episode in range(1000):
@@ -72,4 +72,4 @@ for seed in range(5):
 		Rs.append(r)
 	
 assert len(Rs) == 5000
-np.save('trpo_representaion0.npy', Rs)
+np.save('trpo_representaion1.npy', Rs)

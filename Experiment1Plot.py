@@ -65,7 +65,10 @@ if __name__ == "__main__":
 
 
 	plt.legend(loc=0, fontsize = 'xx-large')
-	plt.xlabel("# of Epochs (600 steps / epoch)", size=20)
-	plt.ylabel("Max Epoch Retrun", size=20)
+	plt.xlabel("# of Epochs (600 steps / epoch)", size=30)
+	plt.ylabel("Max Epoch Retrun", size=30)
+	plt.xticks(fontsize=15)
+	plt.yticks(fontsize=15)
+	plt.title("Experiment 1: Performance of Various Algorithms", fontsize=35)
 
 	plt.show()
