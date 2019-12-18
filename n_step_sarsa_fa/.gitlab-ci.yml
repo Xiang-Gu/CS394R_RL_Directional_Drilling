@@ -1,0 +1,14 @@
+before_script:
+    - date
+    - uname -a
+    - printenv | sort
+
+gcc:
+    image: gpdowning/gcc
+    script:
+    - ls -al
+    - cat makefile
+    - make versions
+    - make clean
+    - make run
+    - make -r check
